@@ -21,7 +21,7 @@ async def set_webhook():
     import httpx
 
     url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/setWebhook"
-    webhook_url = "http://127.0.0.1:8000/telegram/webhook"
+    webhook_url = "https://prime-remoted-backend.onrender.com/telegram/webhook"
 
     async with httpx.AsyncClient() as client:
         resp = await client.post(url, json={"url": webhook_url})

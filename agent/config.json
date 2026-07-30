@@ -1,0 +1,6 @@
+{
+    "device_id": "home-pc",
+    "device_name": "Office PC",
+    "api_key": "CHANGE_ME_TO_YOUR_API_KEY",
+    "backend_url": "https://your-app.onrender.com"
+}

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
 from auth import is_authorized_telegram_user
-from telegram import send_message, answer_callback_query, build_main_menu, build_power_menu
+from telegram import send_message, answer_callback_query, build_main_menu, build_power_menu, build_volume_menu, build_clipboard_menu
 from services.command_queue import device_manager, Command
 import logging
 
@@ -8,14 +8,15 @@ logger = logging.getLogger("backend.webhook")
 router = APIRouter()
 
 
-async def broadcast_command(cmd_type: str, chat_id: int, callback_id: str, label: str):
+async def broadcast_command(cmd_type: str, chat_id: int, callback_id: str, label: str, args: dict = None):
     devices = device_manager.get_devices()
     if not devices:
         await send_message(chat_id, "No devices connected.")
         await answer_callback_query(callback_id, "No devices")
         return
     for device_id in devices:
-        cmd = Command(type=cmd_type, device_id=device_id)
+        devices[device_id]["chat_id"] = chat_id
+        cmd = Command(type=cmd_type, device_id=device_id, args=args or {})
         await device_manager.enqueue_command(device_id, cmd)
     await send_message(chat_id, f"{label}")
     await answer_callback_query(callback_id, f"{label}")
@@ -86,6 +87,30 @@ async def handle_callback(callback_query: dict) -> dict:
 
     elif data == "system":
         await broadcast_command("system_info", chat_id, callback_id, "📊 Fetching system info...")
+
+    elif data == "volume":
+        await send_message(chat_id, "🔊 Volume Menu\nSelect action:", build_volume_menu())
+
+    elif data == "volume_up":
+        await broadcast_command("volume_up", chat_id, callback_id, "🔊 Volume increased.")
+
+    elif data == "volume_down":
+        await broadcast_command("volume_down", chat_id, callback_id, "🔉 Volume decreased.")
+
+    elif data == "volume_mute":
+        await broadcast_command("volume_mute", chat_id, callback_id, "🔇 Muted.")
+
+    elif data == "volume_unmute":
+        await broadcast_command("volume_unmute", chat_id, callback_id, "🔊 Unmuted.")
+
+    elif data == "clipboard":
+        await send_message(chat_id, "📋 Clipboard Menu\nSelect action:", build_clipboard_menu())
+
+    elif data == "clipboard_get":
+        await broadcast_command("clipboard_get", chat_id, callback_id, "📋 Fetching clipboard...")
+
+    elif data == "clipboard_set":
+        await send_message(chat_id, "Send the text you want to copy to clipboard:")
 
     elif data == "devices":
         devices = device_manager.get_devices()

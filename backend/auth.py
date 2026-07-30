@@ -9,6 +9,7 @@ def verify_api_key(x_api_key: str = Header(...)) -> str:
 
 
 def is_authorized_telegram_user(user_id: int) -> bool:
-    if not settings.ALLOWED_TELEGRAM_USER_IDS:
+    allowed_ids = settings.get_allowed_user_ids()
+    if not allowed_ids:
         return False
-    return user_id in settings.ALLOWED_TELEGRAM_USER_IDS
+    return user_id in allowed_ids

@@ -7,7 +7,18 @@ import logging
 logger = logging.getLogger("backend.webhook")
 router = APIRouter()
 
-DEVICE_ID = "home-pc"
+
+async def broadcast_command(cmd_type: str, chat_id: int, callback_id: str, label: str):
+    devices = device_manager.get_devices()
+    if not devices:
+        await send_message(chat_id, "No devices connected.")
+        await answer_callback_query(callback_id, "No devices")
+        return
+    for device_id in devices:
+        cmd = Command(type=cmd_type, device_id=device_id)
+        await device_manager.enqueue_command(device_id, cmd)
+    await send_message(chat_id, f"{label}")
+    await answer_callback_query(callback_id, f"{label}")
 
 
 @router.post("/telegram/webhook")
@@ -59,40 +70,22 @@ async def handle_callback(callback_query: dict) -> dict:
         await send_message(chat_id, "⚡ Power Menu\nSelect action:", build_power_menu())
 
     elif data == "power_shutdown":
-        cmd = Command(type="shutdown", device_id=DEVICE_ID)
-        await device_manager.enqueue_command(DEVICE_ID, cmd)
-        await send_message(chat_id, "🔴 Shutdown command sent.")
-        await answer_callback_query(callback_id, "Shutdown sent")
+        await broadcast_command("shutdown", chat_id, callback_id, "🔴 Shutdown command sent.")
 
     elif data == "power_restart":
-        cmd = Command(type="restart", device_id=DEVICE_ID)
-        await device_manager.enqueue_command(DEVICE_ID, cmd)
-        await send_message(chat_id, "🟡 Restart command sent.")
-        await answer_callback_query(callback_id, "Restart sent")
+        await broadcast_command("restart", chat_id, callback_id, "🟡 Restart command sent.")
 
     elif data == "power_sleep":
-        cmd = Command(type="sleep", device_id=DEVICE_ID)
-        await device_manager.enqueue_command(DEVICE_ID, cmd)
-        await send_message(chat_id, "🔵 Sleep command sent.")
-        await answer_callback_query(callback_id, "Sleep sent")
+        await broadcast_command("sleep", chat_id, callback_id, "🔵 Sleep command sent.")
 
     elif data == "power_lock":
-        cmd = Command(type="lock", device_id=DEVICE_ID)
-        await device_manager.enqueue_command(DEVICE_ID, cmd)
-        await send_message(chat_id, "🟢 Lock command sent.")
-        await answer_callback_query(callback_id, "Lock sent")
+        await broadcast_command("lock", chat_id, callback_id, "🟢 Lock command sent.")
 
     elif data == "screenshot":
-        cmd = Command(type="screenshot", device_id=DEVICE_ID)
-        await device_manager.enqueue_command(DEVICE_ID, cmd)
-        await send_message(chat_id, "📸 Screenshot requested...")
-        await answer_callback_query(callback_id, "Screenshot requested")
+        await broadcast_command("screenshot", chat_id, callback_id, "📸 Screenshot requested...")
 
     elif data == "system":
-        cmd = Command(type="system_info", device_id=DEVICE_ID)
-        await device_manager.enqueue_command(DEVICE_ID, cmd)
-        await send_message(chat_id, "📊 Fetching system info...")
-        await answer_callback_query(callback_id, "System info requested")
+        await broadcast_command("system_info", chat_id, callback_id, "📊 Fetching system info...")
 
     elif data == "devices":
         devices = device_manager.get_devices()

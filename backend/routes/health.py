@@ -15,13 +15,13 @@ async def health_check():
     }
 
 
-@router.post("/set-webhook")
+@router.get("/set-webhook")
 async def set_webhook():
     from config import settings
     import httpx
 
     url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/setWebhook"
-    webhook_url = f"https://{settings.BACKEND_HOST}/telegram/webhook"
+    webhook_url = "http://127.0.0.1:8000/telegram/webhook"
 
     async with httpx.AsyncClient() as client:
         resp = await client.post(url, json={"url": webhook_url})

@@ -6,6 +6,7 @@ from routes.webhook import router as webhook_router
 from routes.commands import router as commands_router
 from routes.results import router as results_router
 from routes.health import router as health_router
+from routes.upload import router as upload_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -28,6 +29,7 @@ app.include_router(webhook_router)
 app.include_router(commands_router)
 app.include_router(results_router)
 app.include_router(health_router)
+app.include_router(upload_router)
 
 
 if __name__ == "__main__":

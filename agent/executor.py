@@ -2,6 +2,8 @@ import logging
 from commands.power import execute_power
 from commands.screen import execute_screenshot
 from commands.system import execute_system_info
+from commands.volume import execute_volume
+from commands.clipboard import execute_clipboard
 
 logger = logging.getLogger("agent.executor")
 
@@ -12,6 +14,12 @@ COMMAND_HANDLERS = {
     "lock": execute_power,
     "screenshot": execute_screenshot,
     "system_info": execute_system_info,
+    "volume_up": execute_volume,
+    "volume_down": execute_volume,
+    "volume_mute": execute_volume,
+    "volume_unmute": execute_volume,
+    "clipboard_get": execute_clipboard,
+    "clipboard_set": execute_clipboard,
 }
 
 

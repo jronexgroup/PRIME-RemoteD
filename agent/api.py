@@ -49,13 +49,13 @@ class API:
         except Exception:
             return False
 
-    async def upload_file(self, file_path: str, filename: str) -> bool:
+    async def upload_file(self, file_path: str, filename: str, file_type: str = "screenshot") -> bool:
         try:
             with open(file_path, "rb") as f:
                 resp = await self.client.post(
                     f"{self.base_url}/upload",
-                    files={"file": (filename, f)},
-                    data={"device_id": config.device_id},
+                    files={"file": (filename, f, "image/png")},
+                    data={"device_id": config.device_id, "file_type": file_type},
                 )
             return resp.status_code == 200
         except Exception:

@@ -66,3 +66,28 @@ def build_power_menu() -> dict:
             [{"text": "◀ Back", "callback_data": "main_menu"}],
         ]
     }
+
+
+def build_volume_menu() -> dict:
+    return {
+        "inline_keyboard": [
+            [
+                {"text": "🔊 Volume Up", "callback_data": "volume_up"},
+                {"text": "🔉 Volume Down", "callback_data": "volume_down"},
+            ],
+            [
+                {"text": "🔇 Mute", "callback_data": "volume_mute"},
+                {"text": "🔊 Unmute", "callback_data": "volume_unmute"},
+            ],
+            [{"text": "◀ Back", "callback_data": "main_menu"}],
+        ]
+    }
+
+
+def build_clipboard_menu() -> dict:
+    return {
+        "inline_keyboard": [
+            [{"text": "📋 Get Clipboard", "callback_data": "clipboard_get"}],
+            [{"text": "◀ Back", "callback_data": "main_menu"}],
+        ]
+    }

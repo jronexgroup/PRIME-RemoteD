@@ -1,7 +1,13 @@
 import subprocess
 import logging
+import sys
+import os
 
 logger = logging.getLogger("agent.clipboard")
+
+STARTUPINFO = subprocess.STARTUPINFO()
+STARTUPINFO.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+STARTUPINFO.wShowWindow = 0
 
 
 async def execute_clipboard(cmd_type: str, args: dict) -> dict:
@@ -9,8 +15,9 @@ async def execute_clipboard(cmd_type: str, args: dict) -> dict:
         if cmd_type == "clipboard_get":
             script = "Get-Clipboard -Format Text -Raw"
             result = subprocess.run(
-                ["powershell", "-NoProfile", "-Command", script],
-                capture_output=True, text=True, timeout=15
+                ["powershell", "-NoProfile", "-WindowStyle", "Hidden", "-Command", script],
+                capture_output=True, text=True, timeout=15,
+                startupinfo=STARTUPINFO, creationflags=0x08000000
             )
             text = result.stdout.strip()
             if not text:
@@ -23,8 +30,9 @@ async def execute_clipboard(cmd_type: str, args: dict) -> dict:
                 return {"message": "No text provided."}
             script = f'Set-Clipboard -Value "{text}"'
             subprocess.run(
-                ["powershell", "-NoProfile", "-Command", script],
-                capture_output=True, text=True, timeout=15
+                ["powershell", "-NoProfile", "-WindowStyle", "Hidden", "-Command", script],
+                capture_output=True, text=True, timeout=15,
+                startupinfo=STARTUPINFO, creationflags=0x08000000
             )
             return {"message": "Text copied to clipboard."}
 

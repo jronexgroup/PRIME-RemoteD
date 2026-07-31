@@ -1,25 +1,28 @@
 import os
 import tempfile
 import logging
-from pathlib import Path
 
 logger = logging.getLogger("agent.screen")
 
 
 async def execute_screenshot(cmd_type: str, args: dict) -> dict:
     try:
-        from PIL import ImageGrab
-        screenshot = ImageGrab.grab()
-        temp_dir = tempfile.gettempdir()
-        file_path = os.path.join(temp_dir, "screenshot.png")
-        screenshot.save(file_path, "PNG")
+        import mss
+        import mss.tools
+
+        with mss.mss() as sct:
+            monitor = sct.monitors[1]
+            sct_img = sct.grab(monitor)
+            temp_dir = tempfile.gettempdir()
+            file_path = os.path.join(temp_dir, "screenshot.png")
+            mss.tools.to_png(sct_img.rgb, sct_img.size, output=file_path)
 
         from api import api
         await api.upload_file(file_path, "screenshot.png")
 
         return {"message": "Screenshot captured and sent.", "data": {"file_path": file_path}}
     except ImportError:
-        return {"message": "Pillow not installed. Run: pip install pillow"}
+        return {"message": "mss not installed. Run: pip install mss"}
     except Exception as e:
         logger.error(f"Screenshot failed: {e}")
         return {"message": f"Screenshot failed: {str(e)}"}

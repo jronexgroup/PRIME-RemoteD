@@ -34,7 +34,10 @@ class DeviceState:
         self._devices: dict[str, dict] = {}
 
     def register_device(self, device_id: str, device_info: dict):
-        self._devices[device_id] = device_info
+        if device_id in self._devices:
+            self._devices[device_id].update(device_info)
+        else:
+            self._devices[device_id] = device_info
         if device_id not in self._queues:
             self._queues[device_id] = asyncio.Queue()
 

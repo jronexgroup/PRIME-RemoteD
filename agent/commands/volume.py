@@ -1,3 +1,4 @@
+import subprocess
 import logging
 
 logger = logging.getLogger("agent.volume")
@@ -5,37 +6,36 @@ logger = logging.getLogger("agent.volume")
 
 async def execute_volume(cmd_type: str, args: dict) -> dict:
     try:
-        from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
-        from comtypes import CLSCTX_ALL
-
-        devices = AudioUtilities.GetSpeakers()
-        interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
-        volume = interface.QueryInterface(IAudioEndpointVolume)
-
         if cmd_type == "volume_up":
-            current = volume.GetMasterVolumeLevelScalar()
-            new_vol = min(1.0, current + 0.1)
-            volume.SetMasterVolumeLevelScalar(new_vol, None)
-            return {"message": f"Volume: {int(new_vol * 100)}%"}
+            script = '''
+            $wsh = New-Object -ComObject WScript.Shell
+            for ($i=0; $i -lt 5; $i++) {
+                $wsh.SendKeys([char]175)
+            }
+            '''
+            subprocess.run(["powershell", "-command", script], capture_output=True, timeout=10)
+            return {"message": "Volume increased."}
 
         elif cmd_type == "volume_down":
-            current = volume.GetMasterVolumeLevelScalar()
-            new_vol = max(0.0, current - 0.1)
-            volume.SetMasterVolumeLevelScalar(new_vol, None)
-            return {"message": f"Volume: {int(new_vol * 100)}%"}
+            script = '''
+            $wsh = New-Object -ComObject WScript.Shell
+            for ($i=0; $i -lt 5; $i++) {
+                $wsh.SendKeys([char]174)
+            }
+            '''
+            subprocess.run(["powershell", "-command", script], capture_output=True, timeout=10)
+            return {"message": "Volume decreased."}
 
         elif cmd_type == "volume_mute":
-            volume.SetMute(1, None)
-            return {"message": "Muted."}
+            subprocess.run(["powershell", "-command", "New-Object -ComObject WScript.Shell.SendKeys([char]173)"], capture_output=True, timeout=10)
+            return {"message": "Muted/Unmuted."}
 
         elif cmd_type == "volume_unmute":
-            volume.SetMute(0, None)
-            return {"message": "Unmuted."}
+            subprocess.run(["powershell", "-command", "New-Object -ComObject WScript.Shell.SendKeys([char]173)"], capture_output=True, timeout=10)
+            return {"message": "Muted/Unmuted."}
 
         return {"message": f"Unknown volume command: {cmd_type}"}
 
-    except ImportError:
-        return {"message": "pycaw not installed. Run: pip install pycaw comtypes"}
     except Exception as e:
         logger.error(f"Volume command failed: {e}")
         return {"message": f"Volume failed: {str(e)}"}

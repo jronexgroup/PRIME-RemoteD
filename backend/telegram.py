@@ -25,6 +25,28 @@ async def send_photo(chat_id: int, photo: bytes, caption: str = "") -> bool:
         return resp.status_code == 200
 
 
+async def send_document(chat_id: int, document: bytes, filename: str, caption: str = "") -> bool:
+    url = f"{TELEGRAM_API_BASE.format(token=settings.TELEGRAM_BOT_TOKEN)}/sendDocument"
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            url,
+            data={"chat_id": chat_id, "caption": caption},
+            files={"document": (filename, document)},
+        )
+        return resp.status_code == 200
+
+
+async def send_video(chat_id: int, video: bytes, caption: str = "") -> bool:
+    url = f"{TELEGRAM_API_BASE.format(token=settings.TELEGRAM_BOT_TOKEN)}/sendVideo"
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            url,
+            data={"chat_id": chat_id, "caption": caption},
+            files={"video": ("recording.avi", video, "video/avi")},
+        )
+        return resp.status_code == 200
+
+
 async def answer_callback_query(callback_query_id: str, text: str = "") -> bool:
     url = f"{TELEGRAM_API_BASE.format(token=settings.TELEGRAM_BOT_TOKEN)}/answerCallbackQuery"
     async with httpx.AsyncClient() as client:
@@ -48,6 +70,19 @@ def build_main_menu() -> dict:
                 {"text": "🔊 Volume", "callback_data": "volume"},
                 {"text": "⚙ System", "callback_data": "system"},
             ],
+            [
+                {"text": "🌐 Apps", "callback_data": "apps"},
+                {"text": "⌨️ Keyboard", "callback_data": "keyboard"},
+            ],
+            [
+                {"text": "🖱 Mouse", "callback_data": "mouse"},
+                {"text": "💻 Terminal", "callback_data": "terminal"},
+            ],
+            [
+                {"text": "📜 Scripts", "callback_data": "scripts"},
+                {"text": "🎬 Record", "callback_data": "record"},
+            ],
+            [{"text": "📤 Upload File", "callback_data": "upload"}],
         ]
     }
 
@@ -88,6 +123,73 @@ def build_clipboard_menu() -> dict:
     return {
         "inline_keyboard": [
             [{"text": "📋 Get Clipboard", "callback_data": "clipboard_get"}],
+            [{"text": "◀ Back", "callback_data": "main_menu"}],
+        ]
+    }
+
+
+def build_apps_menu() -> dict:
+    return {
+        "inline_keyboard": [
+            [{"text": "🌐 Open URL", "callback_data": "open_url"}],
+            [{"text": "📱 Open App", "callback_data": "open_app"}],
+            [{"text": "◀ Back", "callback_data": "main_menu"}],
+        ]
+    }
+
+
+def build_keyboard_menu() -> dict:
+    return {
+        "inline_keyboard": [
+            [
+                {"text": "Enter", "callback_data": "key_enter"},
+                {"text": "Tab", "callback_data": "key_tab"},
+                {"text": "Esc", "callback_data": "key_esc"},
+                {"text": "Space", "callback_data": "key_space"},
+            ],
+            [
+                {"text": "↑", "callback_data": "key_up"},
+                {"text": "↓", "callback_data": "key_down"},
+                {"text": "←", "callback_data": "key_left"},
+                {"text": "→", "callback_data": "key_right"},
+            ],
+            [
+                {"text": "Ctrl+C", "callback_data": "key_ctrl+c"},
+                {"text": "Ctrl+V", "callback_data": "key_ctrl+v"},
+                {"text": "Alt+Tab", "callback_data": "key_alt+tab"},
+            ],
+            [{"text": "◀ Back", "callback_data": "main_menu"}],
+        ]
+    }
+
+
+def build_mouse_menu() -> dict:
+    return {
+        "inline_keyboard": [
+            [{"text": "📍 Send Coordinates", "callback_data": "mouse_click_mode"}],
+            [{"text": "🔄 Scroll Up", "callback_data": "mouse_scroll_up"}],
+            [{"text": "🔄 Scroll Down", "callback_data": "mouse_scroll_down"}],
+            [{"text": "◀ Back", "callback_data": "main_menu"}],
+        ]
+    }
+
+
+def build_record_menu() -> dict:
+    return {
+        "inline_keyboard": [
+            [{"text": "⏱ 5 seconds", "callback_data": "record_5"}],
+            [{"text": "⏱ 10 seconds", "callback_data": "record_10"}],
+            [{"text": "⏱ 30 seconds", "callback_data": "record_30"}],
+            [{"text": "◀ Back", "callback_data": "main_menu"}],
+        ]
+    }
+
+
+def build_files_menu(path: str = "C:\\") -> dict:
+    return {
+        "inline_keyboard": [
+            [{"text": "⬆️ Up", "callback_data": f"files_up:{path}"}],
+            [{"text": "🔄 Refresh", "callback_data": f"files_refresh:{path}"}],
             [{"text": "◀ Back", "callback_data": "main_menu"}],
         ]
     }

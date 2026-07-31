@@ -51,13 +51,25 @@ class API:
 
     async def upload_file(self, file_path: str, filename: str, file_type: str = "screenshot") -> bool:
         try:
+            content_type = "video/avi" if file_type == "video" else "image/png"
             with open(file_path, "rb") as f:
                 resp = await self.client.post(
                     f"{self.base_url}/upload",
-                    files={"file": (filename, f, "image/png")},
+                    files={"file": (filename, f, content_type)},
                     data={"device_id": config.device_id, "file_type": file_type},
                 )
             return resp.status_code == 200
+        except Exception:
+            return False
+
+    async def download_file(self, file_url: str, save_path: str) -> bool:
+        try:
+            resp = await self.client.get(file_url)
+            if resp.status_code == 200:
+                with open(save_path, "wb") as f:
+                    f.write(resp.content)
+                return True
+            return False
         except Exception:
             return False
 

@@ -4,6 +4,9 @@ echo  PRIME REMOTE D - Agent Installer
 echo ========================================
 echo.
 
+:: Get the directory where this batch file is located
+set "SCRIPT_DIR=%~dp0"
+
 :: Check for admin privileges
 net session >nul 2>&1
 if %errorLevel% neq 0 (
@@ -15,7 +18,7 @@ if %errorLevel% neq 0 (
 
 :: Install Python dependencies
 echo Installing dependencies...
-pip install -r requirements.txt
+pip install -r "%SCRIPT_DIR%requirements.txt"
 if %errorLevel% neq 0 (
     echo ERROR: Failed to install dependencies!
     pause
@@ -24,7 +27,7 @@ if %errorLevel% neq 0 (
 
 :: Create Task Scheduler task
 echo Creating auto-start task...
-schtasks /create /tn "PRIMERemoteDAgent" /tr "pythonw.exe \"%~dp0agent.py\"" /sc onlogon /rl highest /f
+schtasks /create /tn "PRIMERemoteDAgent" /tr "pythonw.exe \"%SCRIPT_DIR%agent.py\"" /sc onlogon /rl highest /f
 if %errorLevel% neq 0 (
     echo ERROR: Failed to create task!
     pause

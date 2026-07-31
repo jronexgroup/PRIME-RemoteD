@@ -5,7 +5,7 @@ from pydantic import field_validator
 
 class Settings(BaseSettings):
     TELEGRAM_BOT_TOKEN: str = ""
-    ALLOWED_TELEGRAM_USER_IDS: str = ""
+    ALLOWED_TELEGRAM_USER_IDS: str = ""  # Comma-separated: "123456,789012"
     API_KEY: str = ""
     BACKEND_HOST: str = "0.0.0.0"
     BACKEND_PORT: int = 8000

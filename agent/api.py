@@ -80,6 +80,16 @@ class API:
         except Exception:
             return False
 
+    async def send_screen(self, screen_data: str) -> bool:
+        try:
+            resp = await self.client.post(
+                f"{self.base_url}/screen",
+                json={"device_id": config.device_id, "screen": screen_data},
+            )
+            return resp.status_code == 200
+        except Exception:
+            return False
+
     async def close(self):
         await self.client.aclose()
 

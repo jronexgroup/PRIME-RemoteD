@@ -123,6 +123,7 @@ def build_clipboard_menu() -> dict:
     return {
         "inline_keyboard": [
             [{"text": "📋 Get Clipboard", "callback_data": "clipboard_get"}],
+            [{"text": "📋 Set Clipboard", "callback_data": "clipboard_set"}],
             [{"text": "◀ Back", "callback_data": "main_menu"}],
         ]
     }
@@ -166,7 +167,8 @@ def build_keyboard_menu() -> dict:
 def build_mouse_menu() -> dict:
     return {
         "inline_keyboard": [
-            [{"text": "📍 Send Coordinates", "callback_data": "mouse_click_mode"}],
+            [{"text": "📍 Click Coordinates", "callback_data": "mouse_click_mode"}],
+            [{"text": "📍 Accept Coordinates", "callback_data": "mouse_coords_accept"}],
             [{"text": "🔄 Scroll Up", "callback_data": "mouse_scroll_up"}],
             [{"text": "🔄 Scroll Down", "callback_data": "mouse_scroll_down"}],
             [{"text": "◀ Back", "callback_data": "main_menu"}],

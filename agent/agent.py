@@ -1,12 +1,39 @@
 import asyncio
 import sys
 import signal
+import base64
+import io
 from logger import setup_logger
 from config import config
 from api import api
 from polling import start_polling
 
 logger = setup_logger()
+
+STREAM_ENABLED = True
+STREAM_INTERVAL = 2
+
+
+async def stream_screen():
+    while STREAM_ENABLED:
+        try:
+            import mss
+            with mss.mss() as sct:
+                monitor = sct.monitors[1]
+                img = sct.grab(monitor)
+                from PIL import Image
+                pil_img = Image.frombytes("RGB", img.size, img.bgra, "raw", "BGRX")
+                pil_img.thumbnail((640, 360))
+
+                buffer = io.BytesIO()
+                pil_img.save(buffer, format="JPEG", quality=60)
+                screen_data = base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+                await api.send_screen(screen_data)
+        except Exception as e:
+            logger.debug(f"Screen stream error: {e}")
+
+        await asyncio.sleep(STREAM_INTERVAL)
 
 
 async def main():
@@ -46,7 +73,8 @@ async def main():
         logger.error("Could not connect to backend after maximum retries.")
         return
 
-    logger.info("Starting long polling...")
+    logger.info("Starting long polling + screen streaming...")
+    asyncio.create_task(stream_screen())
     await start_polling()
 
 

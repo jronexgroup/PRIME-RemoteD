@@ -1,6 +1,11 @@
+import subprocess
 import logging
 
 logger = logging.getLogger("agent.volume")
+
+STARTUPINFO = subprocess.STARTUPINFO()
+STARTUPINFO.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+STARTUPINFO.wShowWindow = 0
 
 
 async def execute_volume(cmd_type: str, args: dict) -> dict:
@@ -27,20 +32,34 @@ async def execute_volume(cmd_type: str, args: dict) -> dict:
                 return {"message": f"Volume: {int(new_vol * 100)}%"}
 
             elif cmd_type == "volume_mute":
-                current_mute = volume.GetMute()
                 volume.SetMute(1, None)
                 return {"message": "Muted."}
 
             elif cmd_type == "volume_unmute":
                 volume.SetMute(0, None)
                 return {"message": "Unmuted."}
-
-            return {"message": f"Unknown volume command: {cmd_type}"}
         finally:
             CoUninitialize()
 
-    except ImportError:
-        return {"message": "pycaw not installed. Run: pip install pycaw comtypes"}
     except Exception as e:
-        logger.error(f"Volume command failed: {e}")
-        return {"message": f"Volume failed: {str(e)}"}
+        logger.warning(f"pycaw failed, using fallback: {e}")
+        try:
+            if cmd_type == "volume_up":
+                script = '$obj = New-Object -ComObject WScript.Shell; for($i=0;$i -lt 5;$i++){$obj.SendKeys([char]175)}'
+                subprocess.run(["powershell", "-NoProfile", "-WindowStyle", "Hidden", "-Command", script],
+                             capture_output=True, timeout=10, startupinfo=STARTUPINFO, creationflags=0x08000000)
+                return {"message": "Volume increased."}
+            elif cmd_type == "volume_down":
+                script = '$obj = New-Object -ComObject WScript.Shell; for($i=0;$i -lt 5;$i++){$obj.SendKeys([char]174)}'
+                subprocess.run(["powershell", "-NoProfile", "-WindowStyle", "Hidden", "-Command", script],
+                             capture_output=True, timeout=10, startupinfo=STARTUPINFO, creationflags=0x08000000)
+                return {"message": "Volume decreased."}
+            elif cmd_type in ("volume_mute", "volume_unmute"):
+                script = '$obj = New-Object -ComObject WScript.Shell; $obj.SendKeys([char]173)'
+                subprocess.run(["powershell", "-NoProfile", "-WindowStyle", "Hidden", "-Command", script],
+                             capture_output=True, timeout=10, startupinfo=STARTUPINFO, creationflags=0x08000000)
+                return {"message": "Toggled mute."}
+        except Exception as e2:
+            return {"message": f"Volume failed: {str(e2)}"}
+
+    return {"message": f"Volume command completed."}

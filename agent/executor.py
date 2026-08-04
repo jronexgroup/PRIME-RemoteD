@@ -6,7 +6,7 @@ from commands.volume import execute_volume
 from commands.clipboard import execute_clipboard
 from commands.apps import execute_open_url, execute_open_app
 from commands.scripts import execute_list_scripts, execute_run_script
-from commands.files import execute_list_dir, execute_file_info
+from commands.files import execute_list_dir, execute_file_info, execute_download_file
 from commands.keyboard import execute_keyboard
 from commands.mouse import execute_mouse
 from commands.recording import execute_record_screen
@@ -33,11 +33,13 @@ COMMAND_HANDLERS = {
     "run_script": execute_run_script,
     "list_dir": execute_list_dir,
     "file_info": execute_file_info,
+    "download_file": execute_download_file,
     "keyboard": execute_keyboard,
     "mouse_move": execute_mouse,
     "mouse_click": execute_mouse,
     "mouse_double_click": execute_mouse,
     "mouse_scroll": execute_mouse,
+    "mouse_click_sequence": execute_mouse,
     "record_screen": execute_record_screen,
     "terminal": execute_terminal,
 }

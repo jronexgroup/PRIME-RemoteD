@@ -1,3 +1,4 @@
+import time
 import logging
 
 logger = logging.getLogger("agent.mouse")
@@ -26,7 +27,7 @@ async def execute_mouse(cmd_type: str, args: dict) -> dict:
                 mouse.click(Button.middle)
             else:
                 mouse.click(Button.left)
-            return {"message": f"Clicked ({x}, {y}) with {button}"}
+            return {"message": f"Clicked ({x}, {y})"}
 
         elif cmd_type == "mouse_double_click":
             x = int(args.get("x", 0))
@@ -40,6 +41,20 @@ async def execute_mouse(cmd_type: str, args: dict) -> dict:
             dy = int(args.get("dy", 0))
             mouse.scroll(dx, dy)
             return {"message": f"Scrolled ({dx}, {dy})"}
+
+        elif cmd_type == "mouse_click_sequence":
+            coords = args.get("coords", [])
+            if not coords:
+                return {"message": "No coordinates provided."}
+
+            for i, coord in enumerate(coords):
+                x, y = int(coord["x"]), int(coord["y"])
+                mouse.position = (x, y)
+                mouse.click(Button.left)
+                time.sleep(0.3)
+                logger.info(f"Click {i+1}/{len(coords)} at ({x}, {y})")
+
+            return {"message": f"Executed {len(coords)} clicks."}
 
         return {"message": f"Unknown mouse command: {cmd_type}"}
 

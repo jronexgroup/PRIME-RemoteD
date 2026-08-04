@@ -35,7 +35,10 @@ async def telegram_webhook(request: Request):
         return await handle_callback(data["callback_query"])
 
     if "message" in data:
-        return await handle_message(data["message"])
+        msg = data["message"]
+        if msg.get("document") or msg.get("photo"):
+            return await handle_file_upload(msg)
+        return await handle_message(msg)
 
     return {"ok": True}
 
@@ -54,6 +57,42 @@ async def handle_message(message: dict) -> dict:
         await send_message(chat_id, "Use the menu buttons to control your PC.")
     else:
         await handle_text_input(chat_id, text)
+
+    return {"ok": True}
+
+
+async def handle_file_upload(message: dict) -> dict:
+    chat_id = message.get("chat", {}).get("id")
+    user_id = message.get("from", {}).get("id")
+
+    if not is_authorized_telegram_user(user_id):
+        return {"ok": True}
+
+    devices = device_manager.get_devices()
+    device_id = list(devices.keys())[0] if devices else None
+    if not device_id:
+        await send_message(chat_id, "No device connected.")
+        return {"ok": True}
+
+    file_id = None
+    filename = "uploaded_file"
+
+    if message.get("document"):
+        file_id = message["document"]["file_id"]
+        filename = message["document"].get("file_name", "uploaded_file")
+    elif message.get("photo"):
+        file_id = message["photo"][-1]["file_id"]
+        filename = "photo.jpg"
+
+    save_path = devices[device_id].get("upload_path", "C:\\Downloads")
+
+    cmd = Command(
+        type="download_file",
+        device_id=device_id,
+        args={"file_id": file_id, "save_path": save_path, "filename": filename}
+    )
+    await device_manager.enqueue_command(device_id, cmd)
+    await send_message(chat_id, f"📤 Downloading {filename} to {save_path}...")
 
     return {"ok": True}
 
@@ -97,9 +136,39 @@ async def handle_text_input(chat_id: int, text: str):
             x, y = int(parts[0].strip()), int(parts[1].strip())
             cmd = Command(type="mouse_click", device_id=device_id, args={"x": x, "y": y})
             await device_manager.enqueue_command(device_id, cmd)
-            await send_message(chat_id, f"🖱 Clicking at ({x}, {y})")
+            await send_message(chat_id, f"🖱 Clicked at ({x}, {y})")
         except (ValueError, IndexError):
             await send_message(chat_id, "Invalid format. Send: x,y (e.g. 500,300)")
+        info["pending_action"] = None
+
+    elif pending == "mouse_coords_list":
+        coords_list = info.get("coords_list", [])
+        try:
+            parts = text.split(",")
+            x, y = int(parts[0].strip()), int(parts[1].strip())
+            coords_list.append({"x": x, "y": y})
+            info["coords_list"] = coords_list
+            await send_message(chat_id, f"📍 Added ({x}, {y})\nTotal: {len(coords_list)} points\n\nSend more coords or click 'Run' to execute.")
+        except (ValueError, IndexError):
+            if text.lower() == "done":
+                info["pending_action"] = None
+                if coords_list:
+                    cmd = Command(type="mouse_click_sequence", device_id=device_id, args={"coords": coords_list})
+                    await device_manager.enqueue_command(device_id, cmd)
+                    await send_message(chat_id, f"🖱 Executing {len(coords_list)} clicks...")
+                    info["coords_list"] = []
+            else:
+                await send_message(chat_id, "Invalid format. Send: x,y or 'done' to finish.")
+
+    elif pending == "clipboard_set":
+        cmd = Command(type="clipboard_set", device_id=device_id, args={"text": text})
+        await device_manager.enqueue_command(device_id, cmd)
+        await send_message(chat_id, f"📋 Text copied to clipboard.")
+        info["pending_action"] = None
+
+    elif pending == "files_navigate":
+        cmd = Command(type="list_dir", device_id=device_id, args={"path": text})
+        await device_manager.enqueue_command(device_id, cmd)
         info["pending_action"] = None
 
     else:
@@ -155,6 +224,11 @@ async def handle_callback(callback_query: dict) -> dict:
         await send_message(chat_id, "📋 Clipboard Menu:", build_clipboard_menu())
     elif data == "clipboard_get":
         await broadcast_command("clipboard_get", chat_id, callback_id, "📋 Fetching clipboard...")
+    elif data == "clipboard_set":
+        if device_id:
+            devices[device_id]["pending_action"] = "clipboard_set"
+        await send_message(chat_id, "Send text to copy to clipboard:")
+        await answer_callback_query(callback_id)
 
     elif data == "apps":
         await send_message(chat_id, "🌐 Apps Menu:", build_apps_menu())
@@ -182,6 +256,12 @@ async def handle_callback(callback_query: dict) -> dict:
             devices[device_id]["pending_action"] = "mouse_click"
         await send_message(chat_id, "Send coordinates as x,y (e.g. 500,300):")
         await answer_callback_query(callback_id)
+    elif data == "mouse_coords_accept":
+        if device_id:
+            devices[device_id]["pending_action"] = "mouse_coords_list"
+            devices[device_id]["coords_list"] = []
+        await send_message(chat_id, "📍 Accept Coordinates Mode\n\nSend coordinates one by one (x,y):\n100,200\n300,400\n\nType 'done' when finished.")
+        await answer_callback_query(callback_id)
     elif data == "mouse_scroll_up":
         await broadcast_command("mouse_scroll", chat_id, callback_id, "🔄 Scrolled up", {"dx": 0, "dy": 3})
     elif data == "mouse_scroll_down":
@@ -204,6 +284,17 @@ async def handle_callback(callback_query: dict) -> dict:
     elif data.startswith("record_"):
         duration = int(data.split("_")[1])
         await broadcast_command("record_screen", chat_id, callback_id, f"🎬 Recording {duration}s...", {"duration": duration})
+
+    elif data == "files":
+        await broadcast_command("list_dir", chat_id, callback_id, "📂 Loading C:\\", {"path": "C:\\"})
+    elif data.startswith("files_navigate:"):
+        path = data.split(":", 1)[1]
+        await broadcast_command("list_dir", chat_id, callback_id, f"📂 {path}", {"path": path})
+    elif data == "files_type_path":
+        if device_id:
+            devices[device_id]["pending_action"] = "files_navigate"
+        await send_message(chat_id, "Send the full path:")
+        await answer_callback_query(callback_id)
 
     elif data == "upload":
         await send_message(chat_id, "📤 Send me a file to upload to your PC:")

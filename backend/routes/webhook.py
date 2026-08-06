@@ -256,6 +256,9 @@ async def handle_callback(callback_query: dict) -> dict:
             devices[device_id]["pending_action"] = "mouse_click"
         await send_message(chat_id, "Send coordinates as x,y (e.g. 500,300):")
         await answer_callback_query(callback_id)
+    elif data.startswith("mouse_preset:"):
+        preset = data.split(":", 1)[1]
+        await broadcast_command("mouse_preset", chat_id, callback_id, f"🖱 Clicked: {preset}", {"preset": preset})
     elif data == "mouse_coords_accept":
         if device_id:
             devices[device_id]["pending_action"] = "mouse_coords_list"

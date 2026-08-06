@@ -167,10 +167,33 @@ def build_keyboard_menu() -> dict:
 def build_mouse_menu() -> dict:
     return {
         "inline_keyboard": [
-            [{"text": "📍 Click Coordinates", "callback_data": "mouse_click_mode"}],
-            [{"text": "📍 Accept Coordinates", "callback_data": "mouse_coords_accept"}],
-            [{"text": "🔄 Scroll Up", "callback_data": "mouse_scroll_up"}],
-            [{"text": "🔄 Scroll Down", "callback_data": "mouse_scroll_down"}],
+            [
+                {"text": "🔙 Back", "callback_data": "mouse_preset:browser_back"},
+                {"text": "🔜 Forward", "callback_data": "mouse_preset:browser_forward"},
+                {"text": "🔄 Refresh", "callback_data": "mouse_preset:browser_refresh"},
+            ],
+            [
+                {"text": "📍 Address Bar", "callback_data": "mouse_preset:browser_address"},
+                {"text": "⭐ Bookmark", "callback_data": "mouse_preset:browser_bookmark"},
+            ],
+            [
+                {"text": "➕ New Tab", "callback_data": "mouse_preset:browser_new_tab"},
+                {"text": "❌ Close Tab", "callback_data": "mouse_preset:browser_close_tab"},
+            ],
+            [
+                {"text": "➖ Minimize", "callback_data": "mouse_preset:browser_minimize"},
+                {"text": "⬜ Maximize", "callback_data": "mouse_preset:browser_maximize"},
+                {"text": "❌ Close", "callback_data": "mouse_preset:browser_close"},
+            ],
+            [
+                {"text": "⋮ Menu", "callback_data": "mouse_preset:browser_menu"},
+                {"text": "👤 Profile", "callback_data": "mouse_preset:browser_profile"},
+            ],
+            [
+                {"text": "📍 Click Custom", "callback_data": "mouse_click_mode"},
+                {"text": "🔄 Scroll Up", "callback_data": "mouse_scroll_up"},
+                {"text": "🔄 Scroll Down", "callback_data": "mouse_scroll_down"},
+            ],
             [{"text": "◀ Back", "callback_data": "main_menu"}],
         ]
     }

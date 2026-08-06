@@ -1,12 +1,30 @@
-import time
 import logging
 
 logger = logging.getLogger("agent.mouse")
+
+SAVED_COORDS = {
+    "browser_back": {"x": 24, "y": 69, "name": "🔙 Back"},
+    "browser_forward": {"x": 64, "y": 69, "name": "🔜 Forward"},
+    "browser_refresh": {"x": 109, "y": 69, "name": "🔄 Refresh"},
+    "browser_address": {"x": 650, "y": 69, "name": "📍 Address Bar"},
+    "browser_bookmark": {"x": 1316, "y": 69, "name": "⭐ Bookmark"},
+    "browser_new_tab": {"x": 328, "y": 24, "name": "➕ New Tab"},
+    "browser_close_tab": {"x": 289, "y": 24, "name": "❌ Close Tab"},
+    "browser_minimize": {"x": 1410, "y": 24, "name": "➖ Minimize"},
+    "browser_maximize": {"x": 1460, "y": 24, "name": "⬜ Maximize"},
+    "browser_close": {"x": 1510, "y": 24, "name": "❌ Close Window"},
+    "browser_menu": {"x": 1510, "y": 69, "name": "⋮ Chrome Menu"},
+    "browser_profile": {"x": 1485, "y": 167, "name": "👤 Profile"},
+    "youtube_search": {"x": 720, "y": 170, "name": "🔍 YouTube Search"},
+    "youtube_search_btn": {"x": 1078, "y": 170, "name": "🔎 Search Button"},
+    "youtube_menu": {"x": 42, "y": 169, "name": "☰ YouTube Menu"},
+}
 
 
 async def execute_mouse(cmd_type: str, args: dict) -> dict:
     try:
         from pynput.mouse import Controller, Button
+        import time
 
         mouse = Controller()
 
@@ -52,9 +70,17 @@ async def execute_mouse(cmd_type: str, args: dict) -> dict:
                 mouse.position = (x, y)
                 mouse.click(Button.left)
                 time.sleep(0.3)
-                logger.info(f"Click {i+1}/{len(coords)} at ({x}, {y})")
 
             return {"message": f"Executed {len(coords)} clicks."}
+
+        elif cmd_type == "mouse_preset":
+            preset = args.get("preset", "")
+            if preset in SAVED_COORDS:
+                point = SAVED_COORDS[preset]
+                mouse.position = (point["x"], point["y"])
+                mouse.click(Button.left)
+                return {"message": f"Clicked: {point['name']} ({point['x']}, {point['y']})"}
+            return {"message": f"Unknown preset: {preset}"}
 
         return {"message": f"Unknown mouse command: {cmd_type}"}
 

@@ -40,6 +40,7 @@ COMMAND_HANDLERS = {
     "mouse_double_click": execute_mouse,
     "mouse_scroll": execute_mouse,
     "mouse_click_sequence": execute_mouse,
+    "mouse_preset": execute_mouse,
     "record_screen": execute_record_screen,
     "terminal": execute_terminal,
 }

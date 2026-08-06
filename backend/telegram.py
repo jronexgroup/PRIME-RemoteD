@@ -82,7 +82,10 @@ def build_main_menu() -> dict:
                 {"text": "📜 Scripts", "callback_data": "scripts"},
                 {"text": "🎬 Record", "callback_data": "record"},
             ],
-            [{"text": "📤 Upload File", "callback_data": "upload"}],
+            [
+                {"text": "📺 Show", "callback_data": "show"},
+                {"text": "📤 Upload", "callback_data": "upload"},
+            ],
         ]
     }
 
@@ -215,6 +218,16 @@ def build_files_menu(path: str = "C:\\") -> dict:
         "inline_keyboard": [
             [{"text": "⬆️ Up", "callback_data": f"files_up:{path}"}],
             [{"text": "🔄 Refresh", "callback_data": f"files_refresh:{path}"}],
+            [{"text": "◀ Back", "callback_data": "main_menu"}],
+        ]
+    }
+
+
+def build_show_menu() -> dict:
+    return {
+        "inline_keyboard": [
+            [{"text": "📝 Send Text", "callback_data": "show_text"}],
+            [{"text": "🎵 Send Audio", "callback_data": "show_audio"}],
             [{"text": "◀ Back", "callback_data": "main_menu"}],
         ]
     }

@@ -12,12 +12,13 @@ async def execute_list_scripts(cmd_type: str, args: dict) -> dict:
     try:
         SCRIPTS_DIR.mkdir(exist_ok=True)
         scripts = []
-        for f in SCRIPTS_DIR.iterdir():
+        for f in sorted(SCRIPTS_DIR.iterdir()):
             if f.suffix in (".bat", ".py", ".cmd", ".ps1"):
                 scripts.append(f.name)
         if not scripts:
-            return {"message": "No scripts found in scripts/ folder.", "data": {"scripts": []}}
-        return {"message": f"Found {len(scripts)} scripts.", "data": {"scripts": scripts}}
+            return {"message": "No scripts found.\nPut .bat/.py files in agent/scripts/", "data": {"scripts": []}}
+        script_list = "\n".join([f"📜 {s}" for s in scripts])
+        return {"message": f"Available Scripts:\n{script_list}", "data": {"scripts": scripts}}
     except Exception as e:
         logger.error(f"List scripts failed: {e}")
         return {"message": f"Failed: {str(e)}"}
@@ -34,7 +35,7 @@ async def execute_run_script(cmd_type: str, args: dict) -> dict:
 
     try:
         ext = script_path.suffix.lower()
-        if ext == ".bat" or ext == ".cmd":
+        if ext in (".bat", ".cmd"):
             result = subprocess.run(
                 ["cmd", "/c", str(script_path)],
                 capture_output=True, text=True, timeout=60
@@ -54,14 +55,16 @@ async def execute_run_script(cmd_type: str, args: dict) -> dict:
 
         output = result.stdout.strip()
         if result.returncode != 0:
-            output = result.stderr.strip() or output
+            error = result.stderr.strip()
+            if error:
+                output = f"ERROR:\n{error}"
 
         if not output:
-            return {"message": f"Script executed: {script_name}\n(No output)"}
-        return {"message": f"Script: {script_name}\n{output[:1000]}"}
+            return {"message": f"✅ Script: {script_name}\n(Completed with no output)"}
+        return {"message": f"✅ Script: {script_name}\n{output[:1500]}"}
 
     except subprocess.TimeoutExpired:
-        return {"message": "Script timed out (60s limit)."}
+        return {"message": f"⏱ Script timed out (60s): {script_name}"}
     except Exception as e:
         logger.error(f"Run script failed: {e}")
-        return {"message": f"Failed: {str(e)}"}
+        return {"message": f"❌ Failed: {str(e)}"}

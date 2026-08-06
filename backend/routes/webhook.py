@@ -5,6 +5,7 @@ from telegram import (
     build_main_menu, build_power_menu, build_volume_menu,
     build_clipboard_menu, build_apps_menu, build_keyboard_menu,
     build_mouse_menu, build_record_menu, build_files_menu,
+    build_show_menu,
 )
 from services.command_queue import device_manager, Command
 import logging
@@ -38,6 +39,8 @@ async def telegram_webhook(request: Request):
         msg = data["message"]
         if msg.get("document") or msg.get("photo"):
             return await handle_file_upload(msg)
+        if msg.get("audio") or msg.get("voice"):
+            return await handle_audio_upload(msg)
         return await handle_message(msg)
 
     return {"ok": True}
@@ -93,6 +96,38 @@ async def handle_file_upload(message: dict) -> dict:
     )
     await device_manager.enqueue_command(device_id, cmd)
     await send_message(chat_id, f"📤 Downloading {filename} to {save_path}...")
+
+    return {"ok": True}
+
+
+async def handle_audio_upload(message: dict) -> dict:
+    chat_id = message.get("chat", {}).get("id")
+    user_id = message.get("from", {}).get("id")
+
+    if not is_authorized_telegram_user(user_id):
+        return {"ok": True}
+
+    devices = device_manager.get_devices()
+    device_id = list(devices.keys())[0] if devices else None
+    if not device_id:
+        await send_message(chat_id, "No device connected.")
+        return {"ok": True}
+
+    file_id = None
+    if message.get("audio"):
+        file_id = message["audio"]["file_id"]
+    elif message.get("voice"):
+        file_id = message["voice"]["file_id"]
+
+    save_path = devices[device_id].get("upload_path", "C:\\Downloads")
+
+    cmd = Command(
+        type="play_audio",
+        device_id=device_id,
+        args={"file_id": file_id, "save_path": save_path}
+    )
+    await device_manager.enqueue_command(device_id, cmd)
+    await send_message(chat_id, "🎵 Downloading and playing audio...")
 
     return {"ok": True}
 
@@ -164,6 +199,12 @@ async def handle_text_input(chat_id: int, text: str):
         cmd = Command(type="clipboard_set", device_id=device_id, args={"text": text})
         await device_manager.enqueue_command(device_id, cmd)
         await send_message(chat_id, f"📋 Text copied to clipboard.")
+        info["pending_action"] = None
+
+    elif pending == "show_text":
+        cmd = Command(type="show_text", device_id=device_id, args={"text": text})
+        await device_manager.enqueue_command(device_id, cmd)
+        await send_message(chat_id, f"📺 Displaying text on screen...")
         info["pending_action"] = None
 
     elif pending == "files_navigate":
@@ -273,7 +314,7 @@ async def handle_callback(callback_query: dict) -> dict:
     elif data == "terminal":
         if device_id:
             devices[device_id]["pending_action"] = "terminal"
-        await send_message(chat_id, "💻 Send a command:\nAllowed: dir, ipconfig, ping, systeminfo, tasklist, whoami")
+        await send_message(chat_id, "💻 Send any command to execute:")
         await answer_callback_query(callback_id)
 
     elif data == "scripts":
@@ -281,6 +322,17 @@ async def handle_callback(callback_query: dict) -> dict:
     elif data.startswith("run_script:"):
         script = data.split(":", 1)[1]
         await broadcast_command("run_script", chat_id, callback_id, f"📜 Running: {script}", {"script": script})
+
+    elif data == "show":
+        await send_message(chat_id, "📺 Show Menu:", build_show_menu())
+    elif data == "show_text":
+        if device_id:
+            devices[device_id]["pending_action"] = "show_text"
+        await send_message(chat_id, "📝 Send me the text to display on screen:")
+        await answer_callback_query(callback_id)
+    elif data == "show_audio":
+        await send_message(chat_id, "🎵 Send me an audio file to play:")
+        await answer_callback_query(callback_id)
 
     elif data == "record":
         await send_message(chat_id, "🎬 Screen Recording:", build_record_menu())

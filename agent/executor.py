@@ -6,11 +6,12 @@ from commands.volume import execute_volume
 from commands.clipboard import execute_clipboard
 from commands.apps import execute_open_url, execute_open_app
 from commands.scripts import execute_list_scripts, execute_run_script
-from commands.files import execute_list_dir, execute_file_info, execute_download_file
+from commands.files import execute_list_dir, execute_file_info, execute_download_file, execute_play_audio
 from commands.keyboard import execute_keyboard
 from commands.mouse import execute_mouse
 from commands.recording import execute_record_screen
 from commands.terminal import execute_terminal
+from commands.show import execute_show_text, execute_play_audio
 
 logger = logging.getLogger("agent.executor")
 
@@ -34,6 +35,7 @@ COMMAND_HANDLERS = {
     "list_dir": execute_list_dir,
     "file_info": execute_file_info,
     "download_file": execute_download_file,
+    "play_audio": execute_play_audio,
     "keyboard": execute_keyboard,
     "mouse_move": execute_mouse,
     "mouse_click": execute_mouse,
@@ -43,6 +45,8 @@ COMMAND_HANDLERS = {
     "mouse_preset": execute_mouse,
     "record_screen": execute_record_screen,
     "terminal": execute_terminal,
+    "show_text": execute_show_text,
+    "play_audio": execute_play_audio,
 }
 
 
